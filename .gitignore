@@ -1,0 +1,20 @@
+.idea
+node_modules
+jspm_packages
+npm-debug.*
+link-checker-results.txt
+app/**/*.js
+*.js.map
+e2e/**/*.js
+e2e/**/*.js.map
+_test-output
+_temp
+dist
+.tmp
+bbone
+.DS_Store
+ a2js.sublime-project
+ a2js.sublime-workspace
+ app/.DS_Store
+ app/.baseDir.ts
+videos/
