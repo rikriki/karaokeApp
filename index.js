@@ -21,7 +21,6 @@ const Youtube = require("./lib")
     , _ = require('lodash')
     , mysql = require('mysql')
     , opn = require("opn")
-    , prettyBytes = require("pretty-bytes")
     , request = require('request')
     , express = require('express')
     , path = require('path')
@@ -212,7 +211,33 @@ app.get('/videos', (req, res) => {
     })
 });
 
-function getVideos(token,res){
+function getVideos(token,res,query){
+    
+ 
+    console.log(query)
+    var req = Youtube.search.list(_.extend({
+        pageToken:token
+    },query),(err,results)=>{
+        if(err)
+            console.log(err)
+        if(!results)
+          return;
+        videoItems = videoItems.concat(_.map(results.items,function(item){
+           return {
+                        videoId:item.id.videoId,
+                        title:item.snippet.title
+                   }
+        }))
+        if(results.nextPageToken){
+            console.log(videoItems.length, 'next page ', token)
+            getVideos(results.nextPageToken,res,query)
+        }else{
+            console.log(videoItems)
+        }
+    })
+
+
+
     var req = Youtube.playlistItems.list({
         part:'contentDetails,snippet',
         maxResults:maxResults,
@@ -223,37 +248,33 @@ function getVideos(token,res){
             console.log(err)
         videoItems = videoItems.concat(_.map(results.items,function(item){
            return {
-                        videoId:item.contentDetails.videoId,
+                        videoId:item.id.videoId,
                         title:item.snippet.title
                    }
         }))
         if(results.nextPageToken){
-            console.log(videoItems.length, 'next page ', token)
-            getVideos(results.nextPageToken,res)
+            
+            getVideos(results.nextPageToken,res,query)
         }else{
            // console.log(videoItems, ' End')
             // var sql  = "INSERT INTO ?? SET ?";
 
             
+            // console.log(videoItems)
             var sql  = "INSERT INTO ??  SET ?";
-
-
             _.each(videoItems,function(v,i){
               getResults(mysql.format(sql,['karaoke_videos',v]),function(results){
                 console.log('done!',i,' ',videoItems.length)
                 
                 if(i == videoItems.length -1){
-                  res.send({videos:videoItems})      
+                  console.log('FINISGED')
+                  //res.send({videos:videoItems})      
                 }
               })
             })
 
             
         }
-
-        
-        
-        
     })
 
 }
@@ -267,14 +288,32 @@ function getVideos(token,res){
 // })
 // Handle oauth2 callback
 app.get("/search", (req,res) => {
-    console.log(req.query)
-    var req = Youtube.search.list({
+    
+    var query = _.extend(req.query,{
         maxResults:maxResults,
         part:'snippet',
-        q:req.query.q,
+        //q:req.query.q,
+        
+        //channelId:eq.query.q'UCP9h6HiGKOEGHfrjy2VI81g',
         type:'video'
-    },(err,result)=>{
-        res.send(result)
+    })
+    
+    var req = Youtube.search.list(query,(err,results)=>{
+        if(err)
+            console.log(err, " EROROROR+++++++++++++++========")
+
+        videoItems = videoItems.concat(_.map(results.items,function(item){
+            return {
+                        videoId:item.id.videoId,
+                        //title:item.snippet.title.replace(/!|-|\(|\)/g," ")
+                        title:item.snippet.title
+                   }
+        }))
+
+        if(results.nextPageToken){
+            getVideos(results.nextPageToken,res,query)
+        }
+        //res.send(results)
     })
 
 
