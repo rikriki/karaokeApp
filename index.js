@@ -178,23 +178,33 @@ app.get('/start', (req, res) => {
 
 app.get('/videos', (req, res) => {
     console.log('start videos')
-    var req = Youtube.playlistItems.list({
+     var query = _.extend(req.query,{
         part:'contentDetails,snippet',
         maxResults:maxResults,
-        playlistId:'UUwTRjvjVge51X-ILJ4i22ew',
+        // playlistId:'PLfCy01s40F3CmhE5eAw5J3zeuJ67U7o7x',
         pageToken:req.query.token || ''
-    },(err,results)=>{
+    })
+
+    var req = Youtube.playlistItems.list(query,(err,results)=>{
         if(err)
             console.log(err)
         videoItems = videoItems.concat(_.map(results.items,function(item){
             return {
-                        videoId:item.contentDetails.videoId,
+                        "videoId":item.contentDetails.videoId,
                         //title:item.snippet.title.replace(/!|-|\(|\)/g," ")
-                        title:item.snippet.title
+                        "title":item.snippet.title,
+                        "thumbnail":item.snippet.thumbnails.high.url
                    }
         }))
         if(results.nextPageToken){
             getVideos(results.nextPageToken,res)
+        }else{
+          console.log(videoItems)
+          res.send(videoItems)
+          var fs = require('fs')
+            fs.writeFile('playlist.txt',JSON.stringify(videoItems),null,'\n',function(err){
+              console.log("done")
+            })
         }
 
         // let newItems = _.map(results.items,function(item){
@@ -214,7 +224,7 @@ app.get('/videos', (req, res) => {
 function getVideos(token,res,query){
     
  
-    console.log(query)
+    // console.log(query)
     var req = Youtube.search.list(_.extend({
         pageToken:token
     },query),(err,results)=>{
@@ -224,58 +234,64 @@ function getVideos(token,res,query){
           return;
         videoItems = videoItems.concat(_.map(results.items,function(item){
            return {
-                        videoId:item.id.videoId,
-                        title:item.snippet.title
+                        videoId:"https://www.youtube.com/watch?v="+item.id.videoId,
+                        title:item.snippet.title,
+                        thumbnail:item.snippet.thumbnails.high.url
                    }
         }))
         if(results.nextPageToken){
             console.log(videoItems.length, 'next page ', token)
             getVideos(results.nextPageToken,res,query)
         }else{
-            console.log(videoItems)
-        }
-    })
-
-
-
-    var req = Youtube.playlistItems.list({
-        part:'contentDetails,snippet',
-        maxResults:maxResults,
-        playlistId:'UUwTRjvjVge51X-ILJ4i22ew',
-        pageToken:token
-    },(err,results)=>{
-        if(err)
-            console.log(err)
-        videoItems = videoItems.concat(_.map(results.items,function(item){
-           return {
-                        videoId:item.id.videoId,
-                        title:item.snippet.title
-                   }
-        }))
-        if(results.nextPageToken){
-            
-            getVideos(results.nextPageToken,res,query)
-        }else{
-           // console.log(videoItems, ' End')
-            // var sql  = "INSERT INTO ?? SET ?";
-
-            
-            // console.log(videoItems)
-            var sql  = "INSERT INTO ??  SET ?";
-            _.each(videoItems,function(v,i){
-              getResults(mysql.format(sql,['karaoke_videos',v]),function(results){
-                console.log('done!',i,' ',videoItems.length)
-                
-                if(i == videoItems.length -1){
-                  console.log('FINISGED')
-                  //res.send({videos:videoItems})      
-                }
-              })
+            var fs = require('fs')
+            fs.writeFile('youtube.txt',JSON.stringify(videoItems),null,'\n',function(err){
+              console.log("done")
             })
-
-            
+            console.log(videoItems)
+            res.send(videoItems)
         }
     })
+
+
+
+    // var req = Youtube.playlistItems.list({
+    //     part:'contentDetails,snippet',
+    //     maxResults:maxResults,
+    //     playlistId:'UUwTRjvjVge51X-ILJ4i22ew',
+    //     pageToken:token
+    // },(err,results)=>{
+    //     if(err)
+    //         console.log(err)
+    //     videoItems = videoItems.concat(_.map(results.items,function(item){
+    //        return {
+    //                     videoId:item.id.videoId,
+    //                     title:item.snippet.title
+    //                }
+    //     }))
+    //     if(results.nextPageToken){
+            
+    //         getVideos(results.nextPageToken,res,query)
+    //     }else{
+    //        // console.log(videoItems, ' End')
+    //         // var sql  = "INSERT INTO ?? SET ?";
+
+            
+    //         // console.log(videoItems)
+    //         var sql  = "INSERT INTO ??  SET ?";
+    //         _.each(videoItems,function(v,i){
+    //           getResults(mysql.format(sql,['karaoke_videos',v]),function(results){
+    //             console.log('done!',i,' ',videoItems.length)
+                
+    //             if(i == videoItems.length -1){
+    //               console.log('FINISGED')
+    //               //res.send({videos:videoItems})      
+    //             }
+    //           })
+    //         })
+
+            
+    //     }
+    // })
 
 }
 
@@ -304,9 +320,11 @@ app.get("/search", (req,res) => {
 
         videoItems = videoItems.concat(_.map(results.items,function(item){
             return {
-                        videoId:item.id.videoId,
+                        videoId:"https://www.youtube.com/watch?v="+item.id.videoId,
                         //title:item.snippet.title.replace(/!|-|\(|\)/g," ")
-                        title:item.snippet.title
+                        title:item.snippet.title,
+                        thumbnail:item.snippet.thumbnails.high.url
+                        
                    }
         }))
 
